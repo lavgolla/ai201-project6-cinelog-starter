@@ -8,8 +8,8 @@
 **How I verified: rechecked if the save_to_watchlist() still exist and also checked using grep -rn "save_to_watchlist" /Users/lavanya/ClassAi201/ai201-project6-cinelog-starter --include="*.py" it returns none**
 
 ## Comment 2 — Deduplication
-**What I did:**
-**How I verified:**
+**What I did:I dentify the code from logic from add_to_collection() in services/collection_service.py Add deduplication logic to add_to_watchlist() in services/watchlist_service.py**
+**How I verified: Understand where the logic sits and added the deduplication logic**
 
 ## Comment 3 — Missing test
 **What I did:**
