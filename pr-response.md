@@ -51,13 +51,14 @@ I used Claude Code (AI assistant) at several points during this project:
 ## Git Log — feature/watchlist branch
 
 ```
-8d52271 docs: complete pr-response.md with AI usage and PR description
-793ba51 docs: add pr-response.md with visibility and sort order decisions
-faa1ff8 test: add test for nonexistent film_id in add_to_watchlist
-c964765 fix: Updated the deduplication logic to add_to_watchlist()
-44f20ef refactor:change function name save_to_watchlist in services/watchlist_service.py to add_to_watchlist.
-7c37bcd fix: update film retrieval method to use db.session.get in collection and watchlist services
-ec90edb added watchlist model and endpoint fixed a bug more changes
+ba047f3 docs: move pr-response.md to repo root with git log section
+8193d6d docs: complete pr-response.md with AI usage and PR description
+4344ef9 docs: add pr-response.md with visibility and sort order decisions
+a7cad77 test: add test for nonexistent film_id in add_to_watchlist
+ec7c9c4 fix: Updated the deduplication logic to add_to_watchlist()
+c452913 refactor:change function name save_to_watchlist in services/watchlist_service.py to add_to_watchlist.
+8a130e7 fix: update film retrieval method to use db.session.get in collection and watchlist services
+9605be8 added watchlist model and endpoint fixed a bug more changes
 ```
 
 ## PR Description
