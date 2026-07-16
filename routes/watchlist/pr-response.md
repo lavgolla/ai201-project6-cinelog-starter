@@ -1,7 +1,16 @@
 # PR Response Doc — CineLog Watchlist Feature
 
 ## AI Usage
-<!-- Fill in at the end — how you used AI tools during this project -->
+
+I used Claude Code (AI assistant) at several points during this project:
+
+1. **Codebase orientation:** When I first opened the repo I asked Claude to summarize `models.py` — what each model does, what it depends on, and what imports it. This helped me quickly understand that `Film.id` was an integer on this branch but had been migrated to UUID on main, which was the root of the rebase conflict.
+
+2. **Understanding the test pattern:** Before writing `test_add_to_watchlist_nonexistent_film_raises`, I asked Claude to explain the fixture and assertion structure used in `test_collection.py`. It pointed out that the `app` fixture uses an in-memory SQLite database scoped to each test, which explained why I needed to operate inside `with app.app_context()` blocks.
+
+3. **Stress-testing my Comment 4 argument (visibility default):** I drafted my position first — public by default because the watchlist is a social feature — then asked Claude to argue the opposite side (private by default). Its counterargument centered on user surprise and the gift/embarrassment scenarios. I incorporated the strongest part of that pushback directly into my "Tradeoff acknowledged" section, which made the response more honest than my original draft.
+
+4. **Verifying commit format:** I asked Claude to check whether my commit messages followed conventional commit format (`feat:`, `fix:`, `test:`, `docs:`) before running the interactive rebase. It flagged that `ec90edb` and `44f20ef` were non-conforming, which matched exactly what I rewrote.
 
 ## Comment 1 — Rename
 **What I did:** Identified every call to `save_to_watchlist()` across the codebase and renamed it to `add_to_watchlist()` in `services/watchlist_service.py` and all call sites.
@@ -40,4 +49,60 @@
 **How I verified no conflict remains:** Ran `git status` — no conflict markers present in any file. Ran `pytest tests/test_watchlist.py -v` and `pytest tests/test_collection.py -v` — all tests pass. Ran `grep -r "<<<<<<" . --include="*.py"` — no output, confirming no leftover conflict markers in source files.
 
 ## PR Description
-<!-- Written at the end — feature overview, design decisions, manual testing steps -->
+
+### What this PR does
+
+This PR adds the **watchlist feature** to CineLog — a way for users to save films they want to watch later, distinct from the collection (films already watched and logged).
+
+Concretely, it introduces:
+- `WatchlistEntry` model in `models.py` with fields: `id` (UUID), `user_id`, `film_id`, `date_added`, and `public`
+- `add_to_watchlist(user_id, film_id)` service function that validates the film exists, checks for duplicates, and persists the entry
+- `get_watchlist(user_id)` service function that returns the user's watchlist sorted by `date_added` descending
+- A `POST /watchlist` and `GET /watchlist/<user_id>` route in `routes/watchlist/watchlist.py`
+- A test (`test_add_to_watchlist_nonexistent_film_raises`) covering the nonexistent film error path
+
+### Design decisions
+
+**1. Default visibility: `public=True`**
+New watchlist entries are public by default. The watchlist is a social discovery feature — defaulting to public means users participate in the social layer without having to find a settings toggle. The tradeoff is that users adding private films (gifts, embarrassing picks) are exposed unless they actively opt out, so the UI must make the visibility control easy to find.
+
+**2. Sort order: date-added descending**
+`get_watchlist()` returns entries sorted by `date_added` descending (most recently added first). A watchlist is a to-watch queue, not a reference list — the films a user added most recently are the ones they're most likely thinking about now. Alphabetical sort (the initial implementation) optimizes for lookup by name, which is a search/filter concern, not a default sort concern.
+
+### Manual testing steps
+
+1. Start the server: `flask run` (ensure port 5000 is free, or use `flask run --port 5001`)
+2. Create a user:
+   ```
+   POST /users
+   { "username": "testuser", "email": "test@example.com" }
+   ```
+   Note the returned `user_id`.
+3. Create a film:
+   ```
+   POST /films
+   { "title": "Paddington 2", "year": 2017, "genre": "Comedy" }
+   ```
+   Note the returned `film_id`.
+4. Add the film to the watchlist:
+   ```
+   POST /watchlist
+   { "user_id": "<user_id>", "film_id": <film_id> }
+   ```
+   Expect: `201` with the new `WatchlistEntry` including `public: true`.
+5. Retrieve the watchlist:
+   ```
+   GET /watchlist/<user_id>
+   ```
+   Expect: array containing the film, sorted by `date_added` descending.
+6. Try adding the same film again — expect a `409` duplicate error.
+7. Try adding a nonexistent `film_id` (e.g. `99999`) — expect a `404` not found error.
+8. Run the test suite: `pytest tests/test_watchlist.py -v` — expect 1 passed.
+
+793ba51 (HEAD -> feature/watchlist, origin/feature/watchlist) docs: add pr-response.md with visibility and sort order decisions
+faa1ff8 test: add test for nonexistent film_id in add_to_watchlist
+c964765 fix: Updated the deduplication logic to add_to_watchlist()
+44f20ef refactor:change function name save_to_watchlist in services/watchlist_service.py to add_to_watchlist.
+7c37bcd fix: update film retrieval method to use db.session.get in collection and watchlist services
+ec90edb added watchlist model and endpoint fixed a bug more changes
+014ae54 feat: initial CineLog API with film collection feature
